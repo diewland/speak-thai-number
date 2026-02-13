@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="min-h-screen flex items-center justify-center bg-gray-100">
+
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-80 space-y-4">
+      <input id="txt_num" type="number" min="0" max="9999999" required placeholder="Enter a number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" value="2569" />
+      <button id="btn_say" type="button" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Say</button>
+    </div>
+
+    <script>
+    // craft words logic
+    function craft_words(num) {
+      let base_digits = [
+        null,
+        '1.mp3',
+        '2.mp3',
+        '3.mp3',
+        '4.mp3',
+        '5.mp3',
+        '6.mp3',
+        '7.mp3',
+        '8.mp3',
+        '9.mp3',
+      ];
+      let digit_places = [
+        null,
+        '10.mp3',
+        '100.mp3',
+        '1_000.mp3',
+        '10_000.mp3',
+        '100_000.mp3',
+        '1_000_000.mp3',
+      ];
+
+      // limit
+      if (num > 9_999_999) num = 9_999_999;
+      if (num < 0) num = 0;
+
+      // case: zero
+      if (num === 0) return [ '0.mp3' ];
+
+      // loop in reverse order
+      let words = [];
+      let rr = num.toString().split('').toReversed();
+      rr.forEach((r, i) => {
+        r = +r;
+        let b = base_digits[r];
+        let p = digit_places[i];
+        if ((r == 1) && (i == 0) && (num > 10)) { // x1
+          words.push('1_10.mp3');
+        }
+        else if ((r == 1) && (i == 1)) { // 10
+          words.push('10.mp3');
+        }
+        else if ((r == 2) && (i == 1)) { // 20
+          words.push('20.mp3');
+        }
+        else if (b) { // zero between places
+          if (p) words.push(p);
+          words.push(b);
+        }
+      });
+
+      // reverse back
+      return words.toReversed();
+    }
+
+    // play sound
+    let is_playing = false;
+    let pending_list = [];
+    function play_sound_from_list(files) {
+        // if playing, add to pending list
+        if (is_playing) {
+          console.log('add to pending list');
+          pending_list = pending_list.concat(files);
+          return;
+        }
+        // play sound
+        is_playing = true;
+        let currentIndex = 0;
+        const audio = new Audio();
+        audio.addEventListener('ended', () => {
+            currentIndex++;
+            if (currentIndex < files.length) {
+                audio.src = files[currentIndex];
+                audio.play();
+            }
+            else { // finish play sound
+              console.log('finish');
+              is_playing = false;
+              if (pending_list.length > 0) {
+                play_sound_from_list(pending_list.slice());
+                pending_list.length = 0;
+              }
+            }
+        });
+        if (files.length > 0) {
+            audio.src = files[currentIndex];
+            audio.play();
+        }
+    }
+
+    // testcases
+    /*
+    let testcases = [
+      0,
+      10,   // 10
+      51,   // x1
+      125,  // 20
+      105,  // zero between places
+      2569,
+    ]
+    testcases.forEach(num => {
+      console.log(num, craft_words(num));
+    });
+    */
+
+    function say(num) {
+      let files = craft_words(num).map(w => './mp3/' + w);
+      console.log(files);
+      play_sound_from_list(files);
+    }
+
+    // bind say button
+    document.getElementById('btn_say').onclick = _ => {
+      let num = document.getElementById('txt_num').value;
+      say(num);
+    };
+    </script>
+  </body>
+</html>
